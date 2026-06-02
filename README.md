@@ -40,3 +40,7 @@
 - HTML
 - CSS
 - JavaScript
+
+## Purpose
+
+I built this to better my understanding of how banks evaluate businesses when deciding whether to approve loans. It takes a company's financial information, calculates important financial measurements, and uses those measurements to calculate a risk score and lending recommendation. Building this project helped me learn more about credit risk and how data can be utilized to support business decisions.
