@@ -1,4 +1,4 @@
-# Credit-Risk-Analysis-Page
+# Credit Risk Analysis Page
 ## Features
 
 - Financial ratio analysis
