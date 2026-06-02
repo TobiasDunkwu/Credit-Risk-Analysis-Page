@@ -1,0 +1,2218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Credit Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Serif:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --navy: #141210;
+  --navy-mid: #1c1916;
+  --navy-light: #26221e;
+  --navy-border: #3a3530;
+  --accent: #6aad78;
+  --accent-dim: #4e9060;
+  --accent-glow: rgba(106,173,120,0.15);
+  --gold: #d4935a;
+  --gold-light: #e8b48a;
+  --surface: #181512;
+  --surface-raised: #211e1a;
+  --surface-card: #2a2520;
+  --text-primary: #f0ece6;
+  --text-secondary: #a89e92;
+  --text-muted: #6b6158;
+  --border: rgba(120,100,75,0.3);
+  --border-bright: rgba(106,173,120,0.45);
+  --success: #6aad78;
+  --success-bg: rgba(106,173,120,0.12);
+  --warning: #e8a84a;
+  --warning-bg: rgba(232,168,74,0.12);
+  --danger: #d9604a;
+  --danger-bg: rgba(217,96,74,0.12);
+  --info: #7ab8d4;
+  --info-bg: rgba(122,184,212,0.12);
+  --font-sans: 'IBM Plex Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font-serif: 'IBM Plex Serif', serif;
+  --radius: 6px;
+  --radius-lg: 10px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--navy);
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ─── TOP BAR ─── */
+.topbar {
+  background: var(--navy-mid);
+  border-bottom: 1px solid var(--navy-border);
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand-icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, var(--accent) 0%, #4e9060 100%);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+.brand-name {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+.brand-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.topbar-nav {
+  display: flex;
+  gap: 4px;
+}
+.nav-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.nav-btn:hover { background: rgba(255,255,255,0.06); color: var(--text-primary); }
+.nav-btn.active { background: var(--accent-glow); color: var(--accent); border: 1px solid var(--border-bright); }
+.topbar-actions { display: flex; gap: 8px; }
+.btn-sample {
+  background: var(--accent-glow);
+  border: 1px solid var(--border-bright);
+  color: var(--accent);
+  padding: 6px 16px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+  position: relative;
+}
+.btn-sample:hover { background: rgba(46,124,246,0.25); }
+.sample-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  min-width: 240px;
+  display: none;
+  z-index: 200;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+}
+.sample-dropdown.open { display: block; }
+.sample-item {
+  padding: 10px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+.sample-item:last-child { border-bottom: none; }
+.sample-item:hover { background: rgba(255,255,255,0.05); }
+.sample-item-name { font-weight: 500; font-size: 13px; color: var(--text-primary); }
+.sample-item-desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+/* ─── LAYOUT ─── */
+.app-layout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  min-height: calc(100vh - 56px);
+}
+
+/* ─── SIDEBAR ─── */
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 24px;
+  overflow-y: auto;
+  max-height: calc(100vh - 56px);
+  position: sticky;
+  top: 56px;
+}
+.sidebar-section {
+  margin-bottom: 28px;
+}
+.section-header {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.field-group { margin-bottom: 12px; }
+.field-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+.field-input {
+  width: 100%;
+  background: var(--navy-mid);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  transition: border-color 0.15s;
+}
+.field-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--navy-light);
+}
+.field-input::placeholder { color: var(--text-muted); }
+select.field-input {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238ba4c8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+.field-prefix {
+  position: relative;
+}
+.field-prefix .field-input { padding-left: 26px; }
+.field-prefix::before {
+  content: '$';
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 13px;
+  pointer-events: none;
+}
+.analyze-btn {
+  width: 100%;
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  padding: 12px;
+  border-radius: var(--radius);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: all 0.15s;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.analyze-btn:hover { background: var(--accent-dim); }
+
+/* ─── MAIN CONTENT ─── */
+.main-content {
+  padding: 28px 32px;
+  overflow-y: auto;
+}
+
+/* ─── TABS ─── */
+.tab-row {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 28px;
+}
+.tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  padding: 10px 20px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.15s;
+  margin-bottom: -1px;
+}
+.tab:hover { color: var(--text-secondary); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ─── EMPTY STATE ─── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 32px;
+  text-align: center;
+  gap: 16px;
+}
+.empty-icon {
+  font-size: 48px;
+  opacity: 0.3;
+}
+.empty-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.empty-sub {
+  font-size: 14px;
+  color: var(--text-muted);
+  max-width: 400px;
+}
+
+/* ─── KPI CARDS ─── */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.kpi-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  position: relative;
+  overflow: hidden;
+}
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+.kpi-card.risk-low::before { background: var(--success); }
+.kpi-card.risk-moderate::before { background: var(--warning); }
+.kpi-card.risk-elevated::before { background: #f97316; }
+.kpi-card.risk-high::before { background: var(--danger); }
+.kpi-card.accent-blue::before { background: var(--accent); }
+.kpi-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.kpi-value {
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  line-height: 1.2;
+}
+.kpi-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.kpi-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin-top: 6px;
+}
+.badge-success { background: var(--success-bg); color: var(--success); }
+.badge-warning { background: var(--warning-bg); color: var(--warning); }
+.badge-danger { background: var(--danger-bg); color: var(--danger); }
+.badge-elevated { background: rgba(249,115,22,0.1); color: #f97316; }
+.badge-info { background: var(--info-bg); color: var(--info); }
+.badge-neutral { background: rgba(139,164,200,0.1); color: var(--text-secondary); }
+
+/* ─── CHARTS ROW ─── */
+.charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+.chart-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+}
+.chart-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.chart-canvas-wrap {
+  position: relative;
+  width: 100%;
+  height: 240px;
+}
+.gauge-wrap {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── METRICS TABLE ─── */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+.metrics-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+}
+.metrics-card-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.metric-row {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(46,90,160,0.15);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: 12px;
+}
+.metric-row:last-child { border-bottom: none; }
+.metric-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.metric-formula {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  margin-top: 2px;
+}
+.metric-explain {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 3px;
+  line-height: 1.5;
+}
+.metric-right {
+  text-align: right;
+  min-width: 100px;
+}
+.metric-value {
+  font-size: 16px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+.metric-status {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-top: 4px;
+  display: inline-block;
+}
+.status-strong { background: var(--success-bg); color: var(--success); }
+.status-acceptable { background: var(--warning-bg); color: var(--warning); }
+.status-weak { background: var(--danger-bg); color: var(--danger); }
+
+/* ─── SCORE BREAKDOWN ─── */
+.score-breakdown {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+  margin-bottom: 28px;
+}
+.score-breakdown-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 18px;
+}
+.score-row {
+  display: grid;
+  grid-template-columns: 160px 1fr 60px 60px;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.score-row-label { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
+.score-bar-track {
+  height: 8px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.score-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+.score-weight { font-size: 11px; color: var(--text-muted); text-align: right; }
+.score-pts { font-size: 13px; font-family: var(--font-mono); font-weight: 600; text-align: right; }
+
+/* ─── RECOMMENDATION ─── */
+.recommendation-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px 26px;
+  margin-bottom: 28px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 24px;
+  align-items: start;
+}
+.rec-badge-large {
+  padding: 12px 20px;
+  border-radius: var(--radius-lg);
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  text-align: center;
+}
+.rec-approve { background: var(--success-bg); color: var(--success); border: 1px solid rgba(34,197,94,0.3); }
+.rec-conditions { background: var(--warning-bg); color: var(--warning); border: 1px solid rgba(245,158,11,0.3); }
+.rec-review { background: var(--info-bg); color: var(--info); border: 1px solid rgba(56,189,248,0.3); }
+.rec-decline { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
+.rec-factors { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.rec-factor { font-size: 12px; color: var(--text-secondary); display: flex; gap: 8px; align-items: flex-start; }
+.rec-dot { width: 5px; height: 5px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+
+/* ─── INSIGHTS ─── */
+.insights-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+.insight-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+}
+.insight-card-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.insight-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(46,90,160,0.12);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.insight-item:last-child { border-bottom: none; }
+.insight-bullet {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+}
+.bull-strength { background: var(--success-bg); color: var(--success); }
+.bull-weakness { background: var(--danger-bg); color: var(--danger); }
+.bull-concern { background: var(--warning-bg); color: var(--warning); }
+.bull-mitigant { background: var(--info-bg); color: var(--info); }
+
+/* ─── ANALYST RATIONALE ─── */
+.rationale-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px 26px;
+  margin-bottom: 28px;
+}
+.rationale-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.rationale-text {
+  font-family: var(--font-serif);
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* ─── NOTES SECTION ─── */
+.notes-section {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px 26px;
+  margin-bottom: 28px;
+}
+.notes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.notes-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.notes-controls { display: flex; gap: 8px; align-items: center; }
+.note-type-select {
+  background: var(--navy-mid);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 5px 10px;
+  border-radius: var(--radius);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  cursor: pointer;
+}
+.add-note-btn {
+  background: rgba(201,168,76,0.12);
+  border: 1px solid rgba(201,168,76,0.3);
+  color: var(--gold);
+  padding: 5px 14px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.add-note-btn:hover { background: rgba(201,168,76,0.2); }
+.notes-textarea {
+  width: 100%;
+  background: var(--navy-mid);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  min-height: 90px;
+  resize: vertical;
+  transition: border-color 0.15s;
+  margin-bottom: 8px;
+}
+.notes-textarea:focus { outline: none; border-color: var(--gold); }
+.notes-textarea::placeholder { color: var(--text-muted); }
+.notes-list { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+.note-item {
+  background: var(--navy-mid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  position: relative;
+}
+.note-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.note-item-type {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+.note-type-concern { background: rgba(245,158,11,0.12); color: var(--warning); }
+.note-type-strength { background: var(--success-bg); color: var(--success); }
+.note-type-recommendation { background: var(--info-bg); color: var(--info); }
+.note-type-condition { background: rgba(201,168,76,0.12); color: var(--gold); }
+.note-type-general { background: rgba(139,164,200,0.1); color: var(--text-secondary); }
+.note-item-time { font-size: 10px; color: var(--text-muted); }
+.note-item-text { font-size: 13px; color: var(--text-secondary); line-height: 1.55; }
+.note-delete {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.12s;
+}
+.note-delete:hover { color: var(--danger); background: var(--danger-bg); }
+
+/* ─── METHODOLOGY ─── */
+.methodology-section {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px 26px;
+  margin-bottom: 28px;
+}
+.methodology-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.method-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.method-weight-card {
+  background: var(--navy-mid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 12px;
+  text-align: center;
+}
+.method-weight-pct {
+  font-size: 24px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--accent);
+  line-height: 1.2;
+}
+.method-weight-name {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  font-weight: 500;
+}
+.method-sub { font-size: 12px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px; }
+.method-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.method-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  letter-spacing: 0.04em;
+}
+.method-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.method-table th {
+  text-align: left;
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.04);
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+.method-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid rgba(46,90,160,0.12);
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.method-table tr:last-child td { border-bottom: none; }
+.method-table td:first-child { font-family: var(--font-mono); color: var(--accent); font-size: 11px; white-space: nowrap; }
+.method-note {
+  margin-top: 18px;
+  padding: 12px 16px;
+  background: rgba(46,124,246,0.06);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius);
+  border-left: 3px solid var(--accent);
+}
+.method-note-text { font-size: 12px; color: var(--text-secondary); line-height: 1.65; }
+.method-note-text strong { color: var(--text-primary); font-weight: 600; }
+.industry-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+.industry-group {
+  background: var(--navy-mid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+.industry-group-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.ig-low { color: var(--success); }
+.ig-mod { color: var(--warning); }
+.ig-high { color: var(--danger); }
+.industry-list { font-size: 12px; color: var(--text-muted); line-height: 1.8; }
+
+/* ─── FULL CHART (3-col) ─── */
+.full-chart-row {
+  margin-bottom: 28px;
+}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--navy-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 1100px) {
+  .app-layout { grid-template-columns: 1fr; }
+  .sidebar { max-height: none; position: static; }
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .charts-row { grid-template-columns: 1fr; }
+  .metrics-grid { grid-template-columns: 1fr; }
+  .insights-grid { grid-template-columns: 1fr; }
+  .method-grid { grid-template-columns: repeat(3, 1fr); }
+  .method-body { grid-template-columns: 1fr; }
+}
+
+/* Page visibility */
+.page { display: none; }
+.page.active { display: block; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="topbar-brand">
+    <div class="brand-icon">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <rect x="1" y="10" width="4" height="7" rx="1" fill="#fff"/>
+        <rect x="7" y="6" width="4" height="11" rx="1" fill="#fff" opacity="0.8"/>
+        <rect x="13" y="2" width="4" height="15" rx="1" fill="#fff" opacity="0.6"/>
+      </svg>
+    </div>
+    <div>
+      <div class="brand-name">Credit Analysis</div>
+      <div class="brand-sub">Commercial Underwriting Platform</div>
+    </div>
+  </div>
+  <nav class="topbar-nav">
+    <button class="nav-btn active" onclick="showTab('dashboard')">Dashboard</button>
+    <button class="nav-btn" onclick="showTab('metrics')">Financial Metrics</button>
+    <button class="nav-btn" onclick="showTab('insights')">Analyst Insights</button>
+    <button class="nav-btn" onclick="showTab('notes')">Analyst Notes</button>
+    <button class="nav-btn" onclick="showTab('methodology')">Methodology</button>
+  </nav>
+  <div class="topbar-actions">
+    <div style="position:relative">
+      <button class="btn-sample" onclick="toggleSampleMenu()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor" opacity="0.7"/><rect x="8" y="1" width="5" height="5" rx="1" fill="currentColor"/><rect x="1" y="8" width="5" height="5" rx="1" fill="currentColor"/><rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor" opacity="0.7"/></svg>
+        Load Sample
+      </button>
+      <div class="sample-dropdown" id="sampleMenu">
+        <div class="sample-item" onclick="loadSample(0)">
+          <div class="sample-item-name">Midwest Precision Manufacturing</div>
+          <div class="sample-item-desc">Manufacturing · Low-Moderate Risk · $8.5M Revenue</div>
+        </div>
+        <div class="sample-item" onclick="loadSample(1)">
+          <div class="sample-item-name">The Golden Fork Restaurant Group</div>
+          <div class="sample-item-desc">Restaurant · High Risk · $3.2M Revenue</div>
+        </div>
+        <div class="sample-item" onclick="loadSample(2)">
+          <div class="sample-item-name">NovaTech Solutions Inc.</div>
+          <div class="sample-item-desc">Technology Startup · Moderate Risk · $5.1M Revenue</div>
+        </div>
+        <div class="sample-item" onclick="loadSample(3)">
+          <div class="sample-item-name">Lakeview Family Medical Group</div>
+          <div class="sample-item-desc">Healthcare · Low Risk · $12.4M Revenue</div>
+        </div>
+        <div class="sample-item" onclick="loadSample(4)">
+          <div class="sample-item-name">Apex Construction Partners</div>
+          <div class="sample-item-desc">Construction · Elevated Risk · $6.8M Revenue</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- APP LAYOUT -->
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="section-header">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="4" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M1 11c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Company Information
+      </div>
+      <div class="field-group">
+        <div class="field-label">Company Name</div>
+        <input class="field-input" type="text" id="companyName" placeholder="e.g. Acme Industries LLC">
+      </div>
+      <div class="field-group">
+        <div class="field-label">Industry</div>
+        <select class="field-input" id="industry">
+          <option value="">Select industry...</option>
+          <optgroup label="Low Risk">
+            <option value="healthcare">Healthcare / Medical</option>
+            <option value="accounting">Accounting / CPA</option>
+            <option value="insurance">Insurance</option>
+            <option value="utilities">Utilities</option>
+          </optgroup>
+          <optgroup label="Moderate Risk">
+            <option value="manufacturing">Manufacturing</option>
+            <option value="technology">Technology</option>
+            <option value="logistics">Logistics / Distribution</option>
+          </optgroup>
+          <optgroup label="Higher Risk">
+            <option value="retail">Retail</option>
+            <option value="restaurant">Restaurants / Food Service</option>
+            <option value="construction">Construction</option>
+            <option value="startup">Early-Stage Startup</option>
+          </optgroup>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="field-group">
+          <div class="field-label">Years in Business</div>
+          <input class="field-input" type="number" id="yearsInBusiness" placeholder="0" min="0">
+        </div>
+        <div class="field-group">
+          <div class="field-label">Employees</div>
+          <input class="field-input" type="number" id="numEmployees" placeholder="0" min="0">
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-header">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="1" width="10" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M4 8V6M6 8V4M8 8V5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Income Statement
+      </div>
+      <div class="field-group">
+        <div class="field-label">Annual Revenue</div>
+        <div class="field-prefix"><input class="field-input" type="number" id="annualRevenue" placeholder="0" min="0"></div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Net Income</div>
+        <div class="field-prefix"><input class="field-input" type="number" id="netIncome" placeholder="0"></div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">EBITDA</div>
+        <div class="field-prefix"><input class="field-input" type="number" id="ebitda" placeholder="0"></div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-header">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="3" width="10" height="8" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M4 3V2a2 2 0 014 0v1" stroke="currentColor" stroke-width="1.2"/><path d="M4 7h4M4 9h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Balance Sheet
+      </div>
+      <div class="field-group">
+        <div class="field-label">Cash Balance</div>
+        <div class="field-prefix"><input class="field-input" type="number" id="cashBalance" placeholder="0" min="0"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="field-group">
+          <div class="field-label">Current Assets</div>
+          <div class="field-prefix"><input class="field-input" type="number" id="currentAssets" placeholder="0" min="0"></div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Current Liabilities</div>
+          <div class="field-prefix"><input class="field-input" type="number" id="currentLiabilities" placeholder="0" min="0"></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="field-group">
+          <div class="field-label">Total Assets</div>
+          <div class="field-prefix"><input class="field-input" type="number" id="totalAssets" placeholder="0" min="0"></div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Total Debt</div>
+          <div class="field-prefix"><input class="field-input" type="number" id="totalDebt" placeholder="0" min="0"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-header">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.2"/></svg>
+        Loan Request
+      </div>
+      <div class="field-group">
+        <div class="field-label">Monthly Debt Payments (Existing)</div>
+        <div class="field-prefix"><input class="field-input" type="number" id="monthlyDebt" placeholder="0" min="0"></div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Requested Loan Amount</div>
+        <div class="field-prefix"><input class="field-input" type="number" id="loanAmount" placeholder="0" min="0"></div>
+      </div>
+    </div>
+
+    <button class="analyze-btn" onclick="runAnalysis()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M7 13A6 6 0 107 1a6 6 0 000 12z" stroke="currentColor" stroke-width="1.5"/><path d="M13 13l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M5 8h4M7 6v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      Run Credit Analysis
+    </button>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+
+    <!-- DASHBOARD PAGE -->
+    <div class="page active" id="page-dashboard">
+
+      <!-- EMPTY STATE -->
+      <div id="emptyState">
+        <div class="empty-state">
+          <div class="empty-icon">📊</div>
+          <div class="empty-title">No Analysis Running</div>
+          <div class="empty-sub">Enter company financial data in the left panel and click "Run Credit Analysis" to generate a comprehensive underwriting report. Or load a sample company to explore the platform.</div>
+        </div>
+      </div>
+
+      <!-- RESULTS (hidden until analysis runs) -->
+      <div id="dashboardResults" style="display:none">
+
+        <!-- Company Banner -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+          <div>
+            <div style="font-size:20px;font-weight:600;color:var(--text-primary)" id="resultCompanyName">—</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:3px" id="resultCompanyMeta">—</div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono)" id="analysisTimestamp">—</div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="kpi-row" id="kpiRow">
+          <div class="kpi-card" id="kpiScore">
+            <div class="kpi-label">Overall Risk Score</div>
+            <div class="kpi-value" id="kpiScoreVal">—</div>
+            <div class="kpi-sub">out of 100</div>
+            <div id="kpiScoreBadge"></div>
+          </div>
+          <div class="kpi-card accent-blue" id="kpiRec">
+            <div class="kpi-label">Recommendation</div>
+            <div id="kpiRecVal" style="font-size:17px;font-weight:600;line-height:1.3;margin-top:4px;color:var(--text-primary)">—</div>
+          </div>
+          <div class="kpi-card accent-blue">
+            <div class="kpi-label">Current Ratio</div>
+            <div class="kpi-value" id="kpiCurrentRatio">—</div>
+            <div class="kpi-sub">current assets / current liabilities</div>
+            <div id="kpiCurrentRatioBadge"></div>
+          </div>
+          <div class="kpi-card accent-blue">
+            <div class="kpi-label">DSCR</div>
+            <div class="kpi-value" id="kpiDSCR">—</div>
+            <div class="kpi-sub">debt service coverage ratio</div>
+            <div id="kpiDSCRBadge"></div>
+          </div>
+        </div>
+
+        <!-- Gauge + Score Breakdown -->
+        <div class="charts-row">
+          <div class="chart-card">
+            <div class="chart-title">Risk Score Gauge</div>
+            <div class="gauge-wrap">
+              <canvas id="gaugeChart" role="img" aria-label="Risk score gauge showing overall credit risk score">Risk score gauge</canvas>
+            </div>
+            <div style="text-align:center;font-size:12px;color:var(--text-muted);margin-top:-10px">
+              <span id="gaugeLabel">—</span>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Score Category Breakdown</div>
+            <div id="breakdownLegend" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;font-size:12px;color:var(--color-text-secondary)"></div>
+            <div class="chart-canvas-wrap" style="height:200px">
+              <canvas id="breakdownChart" role="img" aria-label="Bar chart showing score breakdown by category">Score breakdown by category</canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Financial Health Charts -->
+        <div class="charts-row">
+          <div class="chart-card">
+            <div class="chart-title">Financial Health Summary</div>
+            <div class="chart-canvas-wrap" style="height:220px">
+              <canvas id="healthChart" role="img" aria-label="Radar chart showing financial health across key dimensions">Financial health radar chart</canvas>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Balance Sheet Composition</div>
+            <div id="balanceLegend" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;font-size:12px;color:var(--color-text-secondary)"></div>
+            <div class="chart-canvas-wrap" style="height:200px">
+              <canvas id="balanceChart" role="img" aria-label="Bar chart showing balance sheet composition">Balance sheet composition</canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recommendation -->
+        <div class="recommendation-card" id="recCard">
+          <div id="recBadge" class="rec-badge-large">—</div>
+          <div>
+            <div style="font-size:15px;font-weight:600;color:var(--text-primary);margin-bottom:8px" id="recTitle">—</div>
+            <div class="rec-factors" id="recFactors"></div>
+          </div>
+        </div>
+
+        <!-- Score Breakdown Table -->
+        <div class="score-breakdown">
+          <div class="score-breakdown-title">Risk Score Breakdown — Category Contributions</div>
+          <div id="scoreBreakdownRows"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- METRICS PAGE -->
+    <div class="page" id="page-metrics">
+      <div id="metricsEmpty" class="empty-state">
+        <div class="empty-icon">📐</div>
+        <div class="empty-title">Run Analysis First</div>
+        <div class="empty-sub">Financial metrics will appear after you run a credit analysis.</div>
+      </div>
+      <div id="metricsResults" style="display:none">
+        <div style="margin-bottom:28px">
+          <div style="font-size:16px;font-weight:600;margin-bottom:4px">Detailed Financial Metrics</div>
+          <div style="font-size:12px;color:var(--text-muted)">Calculated ratios with formulas, benchmarks, and interpretations</div>
+        </div>
+        <!-- Profitability vs Peers chart -->
+        <div class="chart-card" style="margin-bottom:20px">
+          <div class="chart-title">Key Ratio Trend Comparison
+            <span style="font-size:11px;color:var(--text-muted);font-weight:400">vs. Industry Benchmarks</span>
+          </div>
+          <div id="metricsChartLegend" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;font-size:12px;color:var(--text-muted)"></div>
+          <div class="chart-canvas-wrap" style="height:260px">
+            <canvas id="metricsBarChart" role="img" aria-label="Grouped bar chart comparing key financial ratios to industry benchmarks">Financial ratios vs benchmarks</canvas>
+          </div>
+        </div>
+        <div class="metrics-grid">
+          <div class="metrics-card">
+            <div class="metrics-card-title">💧 Liquidity Ratios</div>
+            <div id="liquidityMetrics"></div>
+          </div>
+          <div class="metrics-card">
+            <div class="metrics-card-title">📈 Profitability Ratios</div>
+            <div id="profitMetrics"></div>
+          </div>
+          <div class="metrics-card">
+            <div class="metrics-card-title">⚖️ Leverage Ratios</div>
+            <div id="leverageMetrics"></div>
+          </div>
+          <div class="metrics-card">
+            <div class="metrics-card-title">💰 Cash Flow</div>
+            <div id="cashflowMetrics"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INSIGHTS PAGE -->
+    <div class="page" id="page-insights">
+      <div id="insightsEmpty" class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <div class="empty-title">Run Analysis First</div>
+        <div class="empty-sub">Analyst insights will be generated after you run a credit analysis.</div>
+      </div>
+      <div id="insightsResults" style="display:none">
+        <div style="margin-bottom:28px">
+          <div style="font-size:16px;font-weight:600;margin-bottom:4px">Credit Analyst Insights</div>
+          <div style="font-size:12px;color:var(--text-muted)">Automated qualitative analysis and underwriting intelligence</div>
+        </div>
+        <!-- Industry Risk Assessment -->
+        <div class="chart-card" style="margin-bottom:20px">
+          <div class="chart-title">Industry Risk Profile</div>
+          <div id="industryChartLegend" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;font-size:12px"></div>
+          <div class="chart-canvas-wrap" style="height:220px">
+            <canvas id="industryRiskChart" role="img" aria-label="Doughnut chart showing industry risk classification">Industry risk classification</canvas>
+          </div>
+        </div>
+        <div class="insights-grid">
+          <div class="insight-card">
+            <div class="insight-card-title" style="color:var(--success)">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l4 4 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Key Strengths
+            </div>
+            <div id="strengthsList"></div>
+          </div>
+          <div class="insight-card">
+            <div class="insight-card-title" style="color:var(--danger)">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v6M7 10v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              Key Weaknesses
+            </div>
+            <div id="weaknessesList"></div>
+          </div>
+          <div class="insight-card">
+            <div class="insight-card-title" style="color:var(--warning)">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1L1 13h12L7 1z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M7 5v4M7 10.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              Underwriting Concerns
+            </div>
+            <div id="concernsList"></div>
+          </div>
+          <div class="insight-card">
+            <div class="insight-card-title" style="color:var(--info)">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M7 5v5M5 7h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              Risk Mitigants
+            </div>
+            <div id="mitigantsList"></div>
+          </div>
+        </div>
+        <!-- Rationale -->
+        <div class="rationale-card">
+          <div class="rationale-title">Final Recommendation Rationale</div>
+          <div class="rationale-text" id="rationaleText">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTES PAGE -->
+    <div class="page" id="page-notes">
+      <div style="margin-bottom:24px">
+        <div style="font-size:16px;font-weight:600;margin-bottom:4px">Analyst Notes & Commentary</div>
+        <div style="font-size:12px;color:var(--text-muted)">Document concerns, conditions, and recommendations for this credit file</div>
+      </div>
+
+      <div class="notes-section">
+        <div class="notes-header">
+          <div class="notes-title">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="10" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 5h4M5 7h4M5 9h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            Add New Note
+          </div>
+          <div class="notes-controls">
+            <select class="note-type-select" id="noteType">
+              <option value="general">General</option>
+              <option value="concern">Concern</option>
+              <option value="strength">Strength</option>
+              <option value="recommendation">Recommendation</option>
+              <option value="condition">Condition</option>
+            </select>
+            <button class="add-note-btn" onclick="addNote()">+ Add Note</button>
+          </div>
+        </div>
+        <textarea class="notes-textarea" id="noteInput" placeholder="Enter your analyst commentary here… e.g. 'Borrower's revenue has declined 12% YoY. Recommend requesting 3 years of tax returns and explanation of revenue trend before proceeding.'"></textarea>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:11px;color:var(--text-muted)" id="noteCharCount">0 / 1000 characters</div>
+          <div id="linkedCompany" style="font-size:11px;color:var(--text-muted)">No active analysis</div>
+        </div>
+        <div class="notes-list" id="notesList">
+          <div style="text-align:center;padding:30px;color:var(--text-muted);font-size:13px">No notes added yet. Add your first analyst note above.</div>
+        </div>
+      </div>
+
+      <!-- Quick Note Templates -->
+      <div style="margin-top:-8px;margin-bottom:28px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase">Quick Templates</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <button onclick="insertTemplate('Request 3 years of business tax returns (Form 1120/1065) and CPA-prepared financial statements to verify reported income.')" style="background:var(--navy-mid);border:1px solid var(--border);color:var(--text-secondary);padding:6px 12px;border-radius:var(--radius);cursor:pointer;font-size:12px;font-family:var(--font-sans);transition:all 0.12s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">📄 Request Tax Returns</button>
+          <button onclick="insertTemplate('Recommend personal guarantee from all principals owning 20% or greater equity stake as additional credit enhancement.')" style="background:var(--navy-mid);border:1px solid var(--border);color:var(--text-secondary);padding:6px 12px;border-radius:var(--radius);cursor:pointer;font-size:12px;font-family:var(--font-sans);transition:all 0.12s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">✍️ Personal Guarantee</button>
+          <button onclick="insertTemplate('Request business valuation and/or independent appraisal of collateral assets before final credit approval.')" style="background:var(--navy-mid);border:1px solid var(--border);color:var(--text-secondary);padding:6px 12px;border-radius:var(--radius);cursor:pointer;font-size:12px;font-family:var(--font-sans);transition:all 0.12s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">🏠 Collateral Appraisal</button>
+          <button onclick="insertTemplate('Recommend reducing loan amount to improve DSCR above 1.25x minimum threshold and lower leverage profile.')" style="background:var(--navy-mid);border:1px solid var(--border);color:var(--text-secondary);padding:6px 12px;border-radius:var(--radius);cursor:pointer;font-size:12px;font-family:var(--font-sans);transition:all 0.12s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">💲 Reduce Loan Amount</button>
+          <button onclick="insertTemplate('Require deposit account relationship with minimum average monthly balance of 10% of loan amount as compensating balance.')" style="background:var(--navy-mid);border:1px solid var(--border);color:var(--text-secondary);padding:6px 12px;border-radius:var(--radius);cursor:pointer;font-size:12px;font-family:var(--font-sans);transition:all 0.12s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">🏦 Deposit Relationship</button>
+          <button onclick="insertTemplate('Schedule management interview to assess ownership transition risk, succession plan, and key-person dependency.')" style="background:var(--navy-mid);border:1px solid var(--border);color:var(--text-secondary);padding:6px 12px;border-radius:var(--radius);cursor:pointer;font-size:12px;font-family:var(--font-sans);transition:all 0.12s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">👤 Management Interview</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- METHODOLOGY PAGE -->
+    <div class="page" id="page-methodology">
+      <div class="methodology-section">
+        <div class="methodology-title">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M4 4h6M4 7h4M4 10h6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          Assumptions & Methodology
+        </div>
+
+        <div style="font-size:14px;color:var(--text-secondary);margin-bottom:20px;line-height:1.75;max-width:680px">
+          This platform uses a proprietary <strong style="color:var(--text-primary)">100-point weighted scoring model</strong> designed to simulate the credit underwriting process used by commercial banks and corporate lenders. The model evaluates four quantitative pillars and two qualitative factors.
+        </div>
+
+        <div class="method-grid">
+          <div class="method-weight-card">
+            <div class="method-weight-pct">25%</div>
+            <div class="method-weight-name">Liquidity</div>
+            <div class="method-sub">25 pts</div>
+          </div>
+          <div class="method-weight-card">
+            <div class="method-weight-pct">25%</div>
+            <div class="method-weight-name">Profitability</div>
+            <div class="method-sub">25 pts</div>
+          </div>
+          <div class="method-weight-card">
+            <div class="method-weight-pct">25%</div>
+            <div class="method-weight-name">Leverage</div>
+            <div class="method-sub">25 pts</div>
+          </div>
+          <div class="method-weight-card">
+            <div class="method-weight-pct">15%</div>
+            <div class="method-weight-name">Biz Stability</div>
+            <div class="method-sub">15 pts</div>
+          </div>
+          <div class="method-weight-card">
+            <div class="method-weight-pct">10%</div>
+            <div class="method-weight-name">Industry Risk</div>
+            <div class="method-sub">10 pts</div>
+          </div>
+        </div>
+
+        <div class="method-body">
+          <div>
+            <div class="method-section-title">Quantitative Thresholds</div>
+            <table class="method-table">
+              <thead>
+                <tr><th>Metric</th><th>Strong</th><th>Acceptable</th><th>Weak</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Current Ratio</td><td>≥ 2.0x</td><td>1.2 – 1.99x</td><td>&lt; 1.2x</td></tr>
+                <tr><td>DSCR</td><td>≥ 1.5x</td><td>1.15 – 1.49x</td><td>&lt; 1.15x</td></tr>
+                <tr><td>Profit Margin</td><td>≥ 15%</td><td>5 – 14.9%</td><td>&lt; 5%</td></tr>
+                <tr><td>EBITDA Margin</td><td>≥ 20%</td><td>10 – 19.9%</td><td>&lt; 10%</td></tr>
+                <tr><td>ROA</td><td>≥ 10%</td><td>3 – 9.9%</td><td>&lt; 3%</td></tr>
+                <tr><td>Debt/Assets</td><td>≤ 40%</td><td>40 – 65%</td><td>&gt; 65%</td></tr>
+                <tr><td>Debt/EBITDA</td><td>≤ 3.0x</td><td>3.0 – 5.5x</td><td>&gt; 5.5x</td></tr>
+              </tbody>
+            </table>
+
+            <div style="margin-top:20px">
+              <div class="method-section-title">Risk Score → Recommendation Mapping</div>
+              <table class="method-table">
+                <thead><tr><th>Score Range</th><th>Category</th><th>Recommendation</th></tr></thead>
+                <tbody>
+                  <tr><td>80 – 100</td><td style="color:var(--success)">Low Risk</td><td>Approve</td></tr>
+                  <tr><td>65 – 79</td><td style="color:var(--warning)">Moderate Risk</td><td>Approve with Conditions</td></tr>
+                  <tr><td>45 – 64</td><td style="color:#f97316">Elevated Risk</td><td>Further Review Required</td></tr>
+                  <tr><td>0 – 44</td><td style="color:var(--danger)">High Risk</td><td>Decline</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <div class="method-section-title">Industry Risk Classification</div>
+            <div class="industry-grid">
+              <div class="industry-group">
+                <div class="industry-group-title ig-low">Low Risk (10 pts)</div>
+                <div class="industry-list">Healthcare<br>Accounting<br>Insurance<br>Utilities</div>
+              </div>
+              <div class="industry-group">
+                <div class="industry-group-title ig-mod">Moderate Risk (7 pts)</div>
+                <div class="industry-list">Manufacturing<br>Technology<br>Logistics</div>
+              </div>
+              <div class="industry-group">
+                <div class="industry-group-title ig-high">Higher Risk (4 pts)</div>
+                <div class="industry-list">Retail<br>Restaurants<br>Construction<br>Startups</div>
+              </div>
+            </div>
+
+            <div style="margin-top:20px">
+              <div class="method-section-title">Business Stability Scoring (15 pts)</div>
+              <table class="method-table">
+                <thead><tr><th>Criterion</th><th>Points</th></tr></thead>
+                <tbody>
+                  <tr><td>Years in business ≥ 10</td><td>8 pts</td></tr>
+                  <tr><td>Years in business 5 – 9</td><td>5 pts</td></tr>
+                  <tr><td>Years in business &lt; 5</td><td>2 pts</td></tr>
+                  <tr><td>Employees ≥ 50</td><td>7 pts</td></tr>
+                  <tr><td>Employees 10 – 49</td><td>4 pts</td></tr>
+                  <tr><td>Employees &lt; 10</td><td>1 pt</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="method-note">
+          <div class="method-note-text">
+            <strong>Disclaimer:</strong> This model is designed for educational and portfolio demonstration purposes. It simulates commercial credit underwriting methodology but does not constitute actual financial, legal, or lending advice. Real-world underwriting incorporates credit bureau data, collateral appraisals, industry-specific covenant packages, regulatory capital requirements, and institution-specific credit policy. <strong>DSCR calculations</strong> assume an estimated new loan payment based on the requested loan amount at a 6.5% interest rate over a 5-year amortization schedule. <strong>All ratios</strong> are point-in-time and should be evaluated alongside multi-year trend analysis in a real underwriting context.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────
+let charts = {};
+let analysisData = null;
+let notes = [];
+
+// ─── SAMPLE DATA ─────────────────────────────────────────
+const samples = [
+  {
+    companyName: "Midwest Precision Manufacturing LLC", industry: "manufacturing",
+    yearsInBusiness: 18, numEmployees: 87,
+    annualRevenue: 8500000, netIncome: 680000, ebitda: 1275000, cashBalance: 420000,
+    currentAssets: 2100000, currentLiabilities: 890000,
+    totalAssets: 6800000, totalDebt: 2600000,
+    monthlyDebt: 38000, loanAmount: 1200000
+  },
+  {
+    companyName: "The Golden Fork Restaurant Group", industry: "restaurant",
+    yearsInBusiness: 6, numEmployees: 41,
+    annualRevenue: 3200000, netIncome: 96000, ebitda: 288000, cashBalance: 88000,
+    currentAssets: 310000, currentLiabilities: 295000,
+    totalAssets: 1100000, totalDebt: 820000,
+    monthlyDebt: 12500, loanAmount: 400000
+  },
+  {
+    companyName: "NovaTech Solutions Inc.", industry: "technology",
+    yearsInBusiness: 4, numEmployees: 28,
+    annualRevenue: 5100000, netIncome: 306000, ebitda: 612000, cashBalance: 950000,
+    currentAssets: 1800000, currentLiabilities: 640000,
+    totalAssets: 3200000, totalDebt: 900000,
+    monthlyDebt: 14000, loanAmount: 750000
+  },
+  {
+    companyName: "Lakeview Family Medical Group PLLC", industry: "healthcare",
+    yearsInBusiness: 23, numEmployees: 112,
+    annualRevenue: 12400000, netIncome: 1860000, ebitda: 2480000, cashBalance: 1100000,
+    currentAssets: 3400000, currentLiabilities: 1100000,
+    totalAssets: 9800000, totalDebt: 2900000,
+    monthlyDebt: 45000, loanAmount: 2500000
+  },
+  {
+    companyName: "Apex Construction Partners Inc.", industry: "construction",
+    yearsInBusiness: 9, numEmployees: 34,
+    annualRevenue: 6800000, netIncome: 272000, ebitda: 544000, cashBalance: 210000,
+    currentAssets: 1950000, currentLiabilities: 1480000,
+    totalAssets: 4900000, totalDebt: 3200000,
+    monthlyDebt: 52000, loanAmount: 800000
+  }
+];
+
+// ─── TABS ─────────────────────────────────────────────────
+function showTab(tab) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + tab).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ─── SAMPLE MENU ─────────────────────────────────────────
+function toggleSampleMenu() {
+  document.getElementById('sampleMenu').classList.toggle('open');
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.btn-sample')) document.getElementById('sampleMenu').classList.remove('open');
+});
+
+function loadSample(idx) {
+  const s = samples[idx];
+  Object.entries(s).forEach(([k,v]) => {
+    const el = document.getElementById(k);
+    if (el) el.value = v;
+  });
+  document.getElementById('sampleMenu').classList.remove('open');
+  runAnalysis();
+}
+
+// ─── HELPERS ─────────────────────────────────────────────
+function fmtN(n, dec=2) {
+  if (!isFinite(n)) return 'N/A';
+  return n.toFixed(dec);
+}
+function fmtPct(n) { return isFinite(n) ? n.toFixed(1) + '%' : 'N/A'; }
+function fmtMoney(n) {
+  if (!isFinite(n)) return 'N/A';
+  if (Math.abs(n) >= 1e6) return '$' + (n/1e6).toFixed(2) + 'M';
+  if (Math.abs(n) >= 1e3) return '$' + (n/1e3).toFixed(0) + 'K';
+  return '$' + n.toFixed(0);
+}
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+function metricStatus(value, strongGe, acceptableGe, invert) {
+  if (invert) {
+    if (value <= strongGe) return 'strong';
+    if (value <= acceptableGe) return 'acceptable';
+    return 'weak';
+  }
+  if (value >= strongGe) return 'strong';
+  if (value >= acceptableGe) return 'acceptable';
+  return 'weak';
+}
+function statusLabel(s) {
+  if (s==='strong') return 'Strong';
+  if (s==='acceptable') return 'Acceptable';
+  return 'Weak';
+}
+function statusClass(s) {
+  if (s==='strong') return 'status-strong';
+  if (s==='acceptable') return 'status-acceptable';
+  return 'status-weak';
+}
+
+// ─── ANALYSIS ENGINE ─────────────────────────────────────
+function runAnalysis() {
+  const get = id => parseFloat(document.getElementById(id).value) || 0;
+
+  const d = {
+    companyName: document.getElementById('companyName').value || 'Unnamed Company',
+    industry: document.getElementById('industry').value || 'retail',
+    yearsInBusiness: get('yearsInBusiness'),
+    numEmployees: get('numEmployees'),
+    annualRevenue: get('annualRevenue'),
+    netIncome: get('netIncome'),
+    ebitda: get('ebitda'),
+    cashBalance: get('cashBalance'),
+    currentAssets: get('currentAssets'),
+    currentLiabilities: get('currentLiabilities'),
+    totalAssets: get('totalAssets'),
+    totalDebt: get('totalDebt'),
+    monthlyDebt: get('monthlyDebt'),
+    loanAmount: get('loanAmount')
+  };
+
+  // ── Ratios ──
+  const currentRatio = d.currentLiabilities ? d.currentAssets / d.currentLiabilities : 0;
+  const workingCapital = d.currentAssets - d.currentLiabilities;
+  const profitMargin = d.annualRevenue ? (d.netIncome / d.annualRevenue) * 100 : 0;
+  const ebitdaMargin = d.annualRevenue ? (d.ebitda / d.annualRevenue) * 100 : 0;
+  const roa = d.totalAssets ? (d.netIncome / d.totalAssets) * 100 : 0;
+  const debtToAssets = d.totalAssets ? (d.totalDebt / d.totalAssets) * 100 : 0;
+  const debtToEbitda = d.ebitda ? d.totalDebt / d.ebitda : 0;
+
+  // DSCR: EBITDA / (existing annual debt + estimated new payment)
+  const existingAnnualDebt = d.monthlyDebt * 12;
+  const r = 0.065 / 12;
+  const n = 60;
+  const newMonthlyPayment = d.loanAmount > 0 ? d.loanAmount * (r * Math.pow(1+r,n)) / (Math.pow(1+r,n)-1) : 0;
+  const newAnnualPayment = newMonthlyPayment * 12;
+  const totalAnnualDebt = existingAnnualDebt + newAnnualPayment;
+  const dscr = totalAnnualDebt > 0 ? d.ebitda / totalAnnualDebt : (d.ebitda > 0 ? 99 : 0);
+
+  // ── Scoring ──
+  // Liquidity (25 pts): current ratio + working capital
+  const crStatus = metricStatus(currentRatio, 2.0, 1.2, false);
+  let liqScore = crStatus === 'strong' ? 20 : crStatus === 'acceptable' ? 13 : 5;
+  const wcRatio = d.annualRevenue ? workingCapital / d.annualRevenue : 0;
+  liqScore += wcRatio >= 0.2 ? 5 : wcRatio >= 0.05 ? 3 : 0;
+  liqScore = clamp(liqScore, 0, 25);
+
+  // Profitability (25 pts): margin + EBITDA + ROA
+  const pmStatus = metricStatus(profitMargin, 15, 5, false);
+  const emStatus = metricStatus(ebitdaMargin, 20, 10, false);
+  const roaStatus = metricStatus(roa, 10, 3, false);
+  let profScore = 0;
+  profScore += pmStatus === 'strong' ? 10 : pmStatus === 'acceptable' ? 6 : 2;
+  profScore += emStatus === 'strong' ? 10 : emStatus === 'acceptable' ? 6 : 2;
+  profScore += roaStatus === 'strong' ? 5 : roaStatus === 'acceptable' ? 3 : 0;
+  profScore = clamp(profScore, 0, 25);
+
+  // Leverage (25 pts): D/A + D/EBITDA + DSCR
+  const daStatus = metricStatus(debtToAssets, 40, 65, true);
+  const deStatus = metricStatus(debtToEbitda, 3.0, 5.5, true);
+  const dscrStatus = metricStatus(dscr, 1.5, 1.15, false);
+  let levScore = 0;
+  levScore += daStatus === 'strong' ? 8 : daStatus === 'acceptable' ? 5 : 1;
+  levScore += deStatus === 'strong' ? 8 : deStatus === 'acceptable' ? 5 : 1;
+  levScore += dscrStatus === 'strong' ? 9 : dscrStatus === 'acceptable' ? 5 : 1;
+  levScore = clamp(levScore, 0, 25);
+
+  // Business Stability (15 pts)
+  let stabScore = 0;
+  if (d.yearsInBusiness >= 10) stabScore += 8;
+  else if (d.yearsInBusiness >= 5) stabScore += 5;
+  else stabScore += 2;
+  if (d.numEmployees >= 50) stabScore += 7;
+  else if (d.numEmployees >= 10) stabScore += 4;
+  else stabScore += 1;
+  stabScore = clamp(stabScore, 0, 15);
+
+  // Industry Risk (10 pts)
+  const industryRiskMap = {
+    healthcare: 10, accounting: 10, insurance: 10, utilities: 10,
+    manufacturing: 7, technology: 7, logistics: 7,
+    retail: 4, restaurant: 4, construction: 4, startup: 4
+  };
+  const industryScore = industryRiskMap[d.industry] || 5;
+
+  const totalScore = Math.round(liqScore + profScore + levScore + stabScore + industryScore);
+
+  // Risk Category
+  let riskCat = 'High Risk';
+  if (totalScore >= 80) riskCat = 'Low Risk';
+  else if (totalScore >= 65) riskCat = 'Moderate Risk';
+  else if (totalScore >= 45) riskCat = 'Elevated Risk';
+
+  // Recommendation
+  let rec = 'Decline';
+  let recClass = 'rec-decline';
+  if (totalScore >= 80 && dscr >= 1.25) { rec = 'Approve'; recClass = 'rec-approve'; }
+  else if (totalScore >= 65 || (totalScore >= 50 && dscr >= 1.15)) { rec = 'Approve with Conditions'; recClass = 'rec-conditions'; }
+  else if (totalScore >= 45) { rec = 'Further Review Required'; recClass = 'rec-review'; }
+
+  // Store result
+  analysisData = {
+    d, currentRatio, workingCapital, profitMargin, ebitdaMargin, roa,
+    debtToAssets, debtToEbitda, dscr, newMonthlyPayment, newAnnualPayment, totalAnnualDebt,
+    crStatus, pmStatus, emStatus, roaStatus, daStatus, deStatus, dscrStatus,
+    liqScore, profScore, levScore, stabScore, industryScore, totalScore,
+    riskCat, rec, recClass
+  };
+
+  renderAll();
+}
+
+// ─── RENDER ALL ───────────────────────────────────────────
+function renderAll() {
+  const a = analysisData;
+  if (!a) return;
+
+  // Show results
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('dashboardResults').style.display = 'block';
+  document.getElementById('metricsEmpty').style.display = 'none';
+  document.getElementById('metricsResults').style.display = 'block';
+  document.getElementById('insightsEmpty').style.display = 'none';
+  document.getElementById('insightsResults').style.display = 'block';
+
+  // Update linked note info
+  document.getElementById('linkedCompany').textContent = 'Linked: ' + a.d.companyName;
+
+  renderDashboard();
+  renderMetrics();
+  renderInsights();
+}
+
+function renderDashboard() {
+  const a = analysisData;
+
+  // Company Banner
+  document.getElementById('resultCompanyName').textContent = a.d.companyName;
+  const industryNames = {healthcare:'Healthcare',accounting:'Accounting',insurance:'Insurance',utilities:'Utilities',manufacturing:'Manufacturing',technology:'Technology',logistics:'Logistics',retail:'Retail',restaurant:'Restaurant / Food Service',construction:'Construction',startup:'Startup'};
+  document.getElementById('resultCompanyMeta').textContent =
+    (industryNames[a.d.industry]||a.d.industry) + ' · ' +
+    a.d.yearsInBusiness + ' years in business · ' +
+    a.d.numEmployees + ' employees · ' +
+    fmtMoney(a.d.annualRevenue) + ' revenue';
+  document.getElementById('analysisTimestamp').textContent = 'Analysis: ' + new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  // KPI Cards
+  const scoreEl = document.getElementById('kpiScoreVal');
+  scoreEl.textContent = a.totalScore;
+  const kpiScoreCard = document.getElementById('kpiScore');
+  kpiScoreCard.className = 'kpi-card';
+  const catClasses = {'Low Risk':'risk-low','Moderate Risk':'risk-moderate','Elevated Risk':'risk-elevated','High Risk':'risk-high'};
+  kpiScoreCard.classList.add(catClasses[a.riskCat]||'');
+  const badgeClasses = {'Low Risk':'badge-success','Moderate Risk':'badge-warning','Elevated Risk':'badge-elevated','High Risk':'badge-danger'};
+  document.getElementById('kpiScoreBadge').innerHTML = `<span class="kpi-badge ${badgeClasses[a.riskCat]}">${a.riskCat}</span>`;
+  document.getElementById('kpiRecVal').textContent = a.rec;
+  document.getElementById('kpiCurrentRatio').textContent = fmtN(a.currentRatio);
+  document.getElementById('kpiDSCR').textContent = fmtN(a.dscr);
+  const crBadge = a.crStatus==='strong'?'badge-success':a.crStatus==='acceptable'?'badge-warning':'badge-danger';
+  document.getElementById('kpiCurrentRatioBadge').innerHTML = `<span class="kpi-badge ${crBadge}">${statusLabel(a.crStatus)}</span>`;
+  const dscrBadge = a.dscrStatus==='strong'?'badge-success':a.dscrStatus==='acceptable'?'badge-warning':'badge-danger';
+  document.getElementById('kpiDSCRBadge').innerHTML = `<span class="kpi-badge ${dscrBadge}">${statusLabel(a.dscrStatus)}</span>`;
+
+  // Recommendation Card
+  document.getElementById('recBadge').className = 'rec-badge-large ' + a.recClass;
+  document.getElementById('recBadge').textContent = a.rec;
+  const recTitles = {
+    'Approve':'This application meets underwriting standards for credit approval.',
+    'Approve with Conditions':'This application may proceed subject to conditions and additional requirements.',
+    'Further Review Required':'Additional information and analysis is required before a credit decision can be made.',
+    'Decline':'This application does not meet minimum underwriting standards for approval.'
+  };
+  document.getElementById('recTitle').textContent = recTitles[a.rec];
+
+  const factors = buildRecFactors(a);
+  document.getElementById('recFactors').innerHTML = factors.map(f =>
+    `<div class="rec-factor"><div class="rec-dot" style="background:${f.color}"></div><span>${f.text}</span></div>`
+  ).join('');
+
+  // Score Breakdown Rows
+  const cats = [
+    {name:'Liquidity',score:a.liqScore,max:25,weight:'25%',color:'#6aad78'},
+    {name:'Profitability',score:a.profScore,max:25,weight:'25%',color:'#7ab8d4'},
+    {name:'Leverage & Coverage',score:a.levScore,max:25,weight:'25%',color:'#e8a84a'},
+    {name:'Business Stability',score:a.stabScore,max:15,weight:'15%',color:'#d4935a'},
+    {name:'Industry Risk',score:a.industryScore,max:10,weight:'10%',color:'#b89a6e'},
+  ];
+  document.getElementById('scoreBreakdownRows').innerHTML = cats.map(c => {
+    const pct = (c.score/c.max*100).toFixed(0);
+    return `<div class="score-row">
+      <div class="score-row-label">${c.name}</div>
+      <div class="score-bar-track"><div class="score-bar-fill" style="width:${pct}%;background:${c.color}"></div></div>
+      <div class="score-weight">${c.weight}</div>
+      <div class="score-pts" style="color:${c.color}">${c.score}/${c.max}</div>
+    </div>`;
+  }).join('');
+
+  renderGaugeChart(a.totalScore, a.riskCat);
+  renderBreakdownChart(cats);
+  renderHealthChart(a);
+  renderBalanceChart(a);
+}
+
+function buildRecFactors(a) {
+  const factors = [];
+  const add = (text, color) => factors.push({text, color});
+  // DSCR
+  if (a.dscr >= 1.5) add(`DSCR of ${fmtN(a.dscr)}x exceeds strong threshold (≥ 1.50x) — solid cash flow coverage`, '#6aad78');
+  else if (a.dscr >= 1.15) add(`DSCR of ${fmtN(a.dscr)}x meets acceptable threshold but leaves limited cushion`, '#e8a84a');
+  else add(`DSCR of ${fmtN(a.dscr)}x is below minimum 1.15x threshold — insufficient cash flow coverage`, '#d9604a');
+  // Current Ratio
+  if (a.currentRatio >= 2.0) add(`Current ratio of ${fmtN(a.currentRatio)}x indicates strong short-term liquidity`, '#6aad78');
+  else if (a.currentRatio >= 1.2) add(`Current ratio of ${fmtN(a.currentRatio)}x is acceptable but warrants monitoring`, '#e8a84a');
+  else add(`Current ratio of ${fmtN(a.currentRatio)}x indicates liquidity pressure — current liabilities exceed comfortable levels`, '#d9604a');
+  // Leverage
+  if (a.debtToAssets <= 40) add(`Debt-to-assets ratio of ${fmtN(a.debtToAssets,0)}% reflects conservative capital structure`, '#6aad78');
+  else if (a.debtToAssets <= 65) add(`Debt-to-assets of ${fmtN(a.debtToAssets,0)}% is moderate — additional leverage may limit flexibility`, '#e8a84a');
+  else add(`Elevated debt-to-assets of ${fmtN(a.debtToAssets,0)}% indicates high leverage — balance sheet capacity is constrained`, '#d9604a');
+  // Business Age
+  if (a.d.yearsInBusiness >= 10) add(`${a.d.yearsInBusiness} years in operation demonstrates established business track record`, '#7ab8d4');
+  else if (a.d.yearsInBusiness >= 5) add(`${a.d.yearsInBusiness} years operating history is adequate but represents moderate seasoning risk`, '#e8a84a');
+  else add(`Limited operating history of ${a.d.yearsInBusiness} years represents elevated management and execution risk`, '#d9604a');
+  return factors;
+}
+
+// ─── CHARTS ───────────────────────────────────────────────
+function destroyChart(key) {
+  if (charts[key]) { charts[key].destroy(); delete charts[key]; }
+}
+
+function renderGaugeChart(score, riskCat) {
+  destroyChart('gauge');
+  const catColors = {'Low Risk':'#6aad78','Moderate Risk':'#e8a84a','Elevated Risk':'#d4935a','High Risk':'#d9604a'};
+  const color = catColors[riskCat] || '#8ba4c8';
+  const remaining = 100 - score;
+
+  document.getElementById('gaugeLabel').innerHTML = `<span style="font-weight:600;color:${color}">${score}/100</span> · ${riskCat}`;
+
+  charts.gauge = new Chart(document.getElementById('gaugeChart'), {
+    type: 'doughnut',
+    data: {
+      datasets: [{
+        data: [score, remaining],
+        backgroundColor: [color, 'rgba(255,255,255,0.06)'],
+        borderWidth: 0,
+        circumference: 240,
+        rotation: 240
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '75%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: false }
+      }
+    },
+    plugins: [{
+      id: 'centerText',
+      afterDraw(chart) {
+        const {ctx, chartArea} = chart;
+        const cx = (chartArea.left + chartArea.right) / 2;
+        const cy = (chartArea.top + chartArea.bottom) / 2 + 14;
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = '600 32px IBM Plex Mono, monospace';
+        ctx.fillStyle = '#e8edf5';
+        ctx.fillText(score, cx, cy - 6);
+        ctx.font = '400 12px IBM Plex Sans, sans-serif';
+        ctx.fillStyle = '#8ba4c8';
+        ctx.fillText('/ 100', cx, cy + 20);
+        ctx.restore();
+      }
+    }]
+  });
+}
+
+function renderBreakdownChart(cats) {
+  destroyChart('breakdown');
+  const colors = cats.map(c => c.color);
+  const pcts = cats.map(c => Math.round(c.score / c.max * 100));
+
+  document.getElementById('breakdownLegend').innerHTML = cats.map((c,i) =>
+    `<span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:${colors[i]}"></span><span style="color:#8ba4c8">${c.name}</span></span>`
+  ).join('');
+
+  charts.breakdown = new Chart(document.getElementById('breakdownChart'), {
+    type: 'bar',
+    data: {
+      labels: cats.map(c => c.name),
+      datasets: [{
+        label: 'Score %',
+        data: pcts,
+        backgroundColor: colors,
+        borderRadius: 4,
+        barPercentage: 0.6
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: { label: ctx => ` ${pcts[ctx.dataIndex]}% of max` }
+      }},
+      scales: {
+        x: { ticks: { color: '#546a8a', font: {size:10} }, grid: { display: false } },
+        y: { min: 0, max: 100, ticks: { color: '#546a8a', font:{size:10}, callback: v => v+'%' }, grid: { color: 'rgba(46,90,160,0.15)' } }
+      }
+    }
+  });
+}
+
+function renderHealthChart(a) {
+  destroyChart('health');
+  const vals = [
+    Math.round(clamp(a.currentRatio/2.5*100,0,100)),
+    Math.round(clamp(a.profitMargin/20*100,0,100)),
+    Math.round(clamp(a.ebitdaMargin/25*100,0,100)),
+    Math.round(clamp((1-a.debtToAssets/100)*100,0,100)),
+    Math.round(clamp(a.dscr/2.5*100,0,100)),
+    Math.round(clamp(a.d.yearsInBusiness/15*100,0,100))
+  ];
+  charts.health = new Chart(document.getElementById('healthChart'), {
+    type: 'radar',
+    data: {
+      labels: ['Liquidity','Profitability','EBITDA Margin','Low Leverage','DSCR','Stability'],
+      datasets: [{
+        label: 'Financial Health',
+        data: vals,
+        backgroundColor: 'rgba(106,173,120,0.15)',
+        borderColor: '#6aad78',
+        borderWidth: 2,
+        pointBackgroundColor: '#6aad78',
+        pointRadius: 4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        r: {
+          min: 0, max: 100,
+          ticks: { display: false },
+          grid: { color: 'rgba(120,100,75,0.2)' },
+          pointLabels: { color: '#a89e92', font: {size:11} }
+        }
+      }
+    }
+  });
+}
+
+function renderBalanceChart(a) {
+  destroyChart('balance');
+  const d = a.d;
+  const equity = d.totalAssets - d.totalDebt;
+  const labels = ['Current Assets','Non-Current Assets','Current Liab.','Long-Term Debt','Equity'];
+  const nonCurrAssets = d.totalAssets - d.currentAssets;
+  const ltDebt = d.totalDebt - d.currentLiabilities > 0 ? d.totalDebt - d.currentLiabilities : 0;
+  const vals = [d.currentAssets, nonCurrAssets, d.currentLiabilities, ltDebt, equity > 0 ? equity : 0];
+  const bColors = ['#6aad78','#4e9060','#d9604a','#a84030','#7ab8d4'];
+
+  document.getElementById('balanceLegend').innerHTML = labels.map((l,i) =>
+    `<span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:${bColors[i]}"></span><span style="color:#8ba4c8;font-size:11px">${l}</span></span>`
+  ).join('');
+
+  charts.balance = new Chart(document.getElementById('balanceChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Amount ($)',
+        data: vals,
+        backgroundColor: bColors,
+        borderRadius: 4,
+        barPercentage: 0.55
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: { label: ctx => ' ' + fmtMoney(ctx.parsed.y) }
+      }},
+      scales: {
+        x: { ticks: { color: '#546a8a', font:{size:9}, maxRotation:30 }, grid: { display: false } },
+        y: { ticks: { color: '#546a8a', font:{size:10}, callback: v => fmtMoney(v) }, grid: { color: 'rgba(46,90,160,0.15)' } }
+      }
+    }
+  });
+}
+
+// ─── METRICS PAGE ─────────────────────────────────────────
+function renderMetrics() {
+  const a = analysisData;
+  const mkRow = (name, value, formula, explain, status) => `
+    <div class="metric-row">
+      <div>
+        <div class="metric-name">${name}</div>
+        <div class="metric-formula">${formula}</div>
+        <div class="metric-explain">${explain}</div>
+      </div>
+      <div class="metric-right">
+        <div class="metric-value">${value}</div>
+        <div class="metric-status ${statusClass(status)}">${statusLabel(status)}</div>
+      </div>
+    </div>`;
+
+  document.getElementById('liquidityMetrics').innerHTML =
+    mkRow('Current Ratio', fmtN(a.currentRatio), 'Current Assets ÷ Current Liabilities', 'Measures ability to cover short-term obligations. A ratio ≥ 2.0x is considered strong for most industries.', a.crStatus) +
+    mkRow('Working Capital', fmtMoney(a.workingCapital), 'Current Assets − Current Liabilities', 'Net liquid assets available to fund daily operations. Positive working capital is essential for operational continuity.', a.workingCapital > 0 ? (a.workingCapital > a.d.annualRevenue*0.1 ? 'strong' : 'acceptable') : 'weak');
+
+  document.getElementById('profitMetrics').innerHTML =
+    mkRow('Profit Margin', fmtPct(a.profitMargin), 'Net Income ÷ Revenue × 100', 'Percentage of revenue retained as profit after all expenses. Higher margins indicate pricing power and cost efficiency.', a.pmStatus) +
+    mkRow('EBITDA Margin', fmtPct(a.ebitdaMargin), 'EBITDA ÷ Revenue × 100', 'Measures operating profitability before non-cash charges. Used to assess core business earning power and debt capacity.', a.emStatus) +
+    mkRow('Return on Assets', fmtPct(a.roa), 'Net Income ÷ Total Assets × 100', 'Efficiency of asset utilization in generating profit. Benchmarked against industry peers to assess management quality.', a.roaStatus);
+
+  document.getElementById('leverageMetrics').innerHTML =
+    mkRow('Debt-to-Assets', fmtPct(a.debtToAssets), 'Total Debt ÷ Total Assets × 100', 'Proportion of assets financed by debt. Below 40% is generally considered conservative; above 65% signals high leverage.', a.daStatus) +
+    mkRow('Debt-to-EBITDA', fmtN(a.debtToEbitda) + 'x', 'Total Debt ÷ EBITDA', 'Number of years to repay debt from operating cash flow. A ratio ≤ 3.0x is considered investment-grade by most lenders.', a.deStatus);
+
+  document.getElementById('cashflowMetrics').innerHTML =
+    mkRow('DSCR', fmtN(a.dscr) + 'x', 'EBITDA ÷ Total Annual Debt Service', 'Debt service coverage measures available cash for debt obligations. Banks typically require ≥ 1.25x; ≥ 1.5x is preferred.', a.dscrStatus) +
+    mkRow('Est. New Payment', fmtMoney(a.newMonthlyPayment) + '/mo', 'Loan × [r(1+r)ⁿ / (1+r)ⁿ−1], r=6.5%/12, n=60', `Estimated monthly payment on $${(a.d.loanAmount/1000).toFixed(0)}K loan at 6.5% over 5 years.`, a.dscrStatus);
+
+  // Metrics bar chart
+  renderMetricsBarChart(a);
+}
+
+function renderMetricsBarChart(a) {
+  destroyChart('metricsBar');
+  const labels = ['Current Ratio','Profit Margin %','EBITDA Margin %','D/A Ratio %','DSCR'];
+  const actuals = [
+    parseFloat(fmtN(a.currentRatio)),
+    parseFloat(fmtN(a.profitMargin)),
+    parseFloat(fmtN(a.ebitdaMargin)),
+    parseFloat(fmtN(a.debtToAssets)),
+    parseFloat(fmtN(a.dscr))
+  ];
+  const benchmarks = [2.0, 15, 20, 40, 1.5];
+
+  document.getElementById('metricsChartLegend').innerHTML = `
+    <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#6aad78"></span>Actual</span>
+    <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:rgba(212,147,90,0.5)"></span>Strong Threshold</span>`;
+
+  charts.metricsBar = new Chart(document.getElementById('metricsBarChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Actual', data: actuals, backgroundColor: '#6aad78', borderRadius: 4, barPercentage: 0.4, categoryPercentage: 0.7 },
+        { label: 'Benchmark', data: benchmarks, backgroundColor: 'rgba(212,147,90,0.5)', borderRadius: 4, barPercentage: 0.4, categoryPercentage: 0.7 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
+      scales: {
+        x: { ticks: { color: '#546a8a', font:{size:10} }, grid: { display: false } },
+        y: { ticks: { color: '#546a8a', font:{size:10} }, grid: { color: 'rgba(46,90,160,0.15)' } }
+      }
+    }
+  });
+}
+
+// ─── INSIGHTS PAGE ────────────────────────────────────────
+function renderInsights() {
+  const a = analysisData;
+
+  // Strengths
+  const strengths = [];
+  if (a.crStatus === 'strong') strengths.push('Strong liquidity position — current ratio of ' + fmtN(a.currentRatio) + 'x exceeds 2.0x threshold');
+  if (a.pmStatus === 'strong') strengths.push('Healthy profit margins of ' + fmtPct(a.profitMargin) + ' indicate pricing power and cost discipline');
+  if (a.emStatus === 'strong') strengths.push('Robust EBITDA margin of ' + fmtPct(a.ebitdaMargin) + ' demonstrates strong operating leverage');
+  if (a.daStatus === 'strong') strengths.push('Conservative leverage profile — debt-to-assets of ' + fmtN(a.debtToAssets,0) + '% reflects balance sheet strength');
+  if (a.dscrStatus === 'strong') strengths.push('DSCR of ' + fmtN(a.dscr) + 'x comfortably covers debt service obligations');
+  if (a.d.yearsInBusiness >= 10) strengths.push(a.d.yearsInBusiness + ' years of operating history demonstrates business durability and management depth');
+  if (a.d.numEmployees >= 25) strengths.push('Established workforce of ' + a.d.numEmployees + ' employees reduces key-person concentration risk');
+  if (['healthcare','accounting','insurance','utilities'].includes(a.d.industry)) strengths.push('Operates in a low-risk, recession-resilient industry with stable demand characteristics');
+  if (strengths.length === 0) strengths.push('No significant financial strengths identified — recommend thorough due diligence');
+
+  // Weaknesses
+  const weaknesses = [];
+  if (a.crStatus === 'weak') weaknesses.push('Weak liquidity — current ratio of ' + fmtN(a.currentRatio) + 'x indicates potential difficulty meeting near-term obligations');
+  if (a.pmStatus === 'weak') weaknesses.push('Below-threshold profit margins of ' + fmtPct(a.profitMargin) + ' signal limited earnings power or pricing pressure');
+  if (a.emStatus === 'weak') weaknesses.push('Thin EBITDA margin of ' + fmtPct(a.ebitdaMargin) + ' constrains debt capacity and financial flexibility');
+  if (a.daStatus === 'weak') weaknesses.push('High leverage — debt-to-assets of ' + fmtN(a.debtToAssets,0) + '% limits future borrowing capacity and increases default risk');
+  if (a.deStatus === 'weak') weaknesses.push('Debt-to-EBITDA of ' + fmtN(a.debtToEbitda) + 'x exceeds acceptable threshold — repayment timeline is extended');
+  if (a.dscrStatus === 'weak') weaknesses.push('DSCR below 1.15x minimum — business cash flows do not adequately cover proposed debt service');
+  if (a.d.yearsInBusiness < 5) weaknesses.push('Limited operating history of ' + a.d.yearsInBusiness + ' years increases execution and continuity risk');
+  if (['retail','restaurant','construction','startup'].includes(a.d.industry)) weaknesses.push('Industry concentration in higher-risk sector increases volatility and cyclicality exposure');
+  if (weaknesses.length === 0) weaknesses.push('No material financial weaknesses identified at this time');
+
+  // Concerns
+  const concerns = [];
+  if (a.d.yearsInBusiness < 3) concerns.push('Early-stage business with limited performance history — revenue sustainability is unproven');
+  if (a.d.industry === 'restaurant') concerns.push('Restaurant industry historically experiences high failure rates and thin operating margins');
+  if (a.d.industry === 'construction') concerns.push('Construction revenue can be lumpy and project-dependent — assess backlog and contract pipeline');
+  if (a.d.industry === 'startup') concerns.push('Startup classification carries elevated risk of revenue volatility and cash burn concerns');
+  if (a.debtToEbitda > 4) concerns.push('Debt load relative to earnings is substantial — stress-test repayment under a revenue decline scenario');
+  if (a.d.cashBalance < a.d.annualRevenue * 0.03) concerns.push('Thin cash reserves (' + fmtMoney(a.d.cashBalance) + ') may indicate limited operating buffer or liquidity risk');
+  if (a.workingCapital < 0) concerns.push('Negative working capital (' + fmtMoney(a.workingCapital) + ') suggests current liabilities exceed liquid assets');
+  if (a.d.numEmployees < 10) concerns.push('Small workforce creates key-person dependency and operational concentration risk');
+  if (concerns.length === 0) concerns.push('No material underwriting concerns at this time — standard monitoring conditions apply');
+
+  // Mitigants
+  const mitigants = [];
+  mitigants.push('Obtain personal guarantee(s) from all principals with ≥ 20% ownership interest');
+  if (a.dscr < 1.5) mitigants.push('Consider reducing loan amount by 15–25% to improve DSCR above 1.50x preferred minimum');
+  if (a.d.totalAssets > a.d.totalDebt * 1.5) mitigants.push('Real property or equipment collateral may be pledged to provide additional loan coverage');
+  if (a.d.industry === 'construction' || a.d.industry === 'restaurant') mitigants.push('Require SBA guarantee or USDA Business & Industry loan program as credit enhancement');
+  mitigants.push('Establish deposit account relationship with minimum average monthly balance covenant');
+  mitigants.push('Include financial covenant package: minimum DSCR of 1.15x, minimum current ratio of 1.2x, tested annually');
+  if (a.d.yearsInBusiness < 7) mitigants.push('Request personal financial statements and tax returns for all guarantors');
+
+  const renderList = (arr, type) => arr.map(item => {
+    const icons = {strength:'✓',weakness:'✕',concern:'!',mitigant:'+'};
+    const classes = {strength:'bull-strength',weakness:'bull-weakness',concern:'bull-concern',mitigant:'bull-mitigant'};
+    return `<div class="insight-item">
+      <div class="insight-bullet ${classes[type]}">${icons[type]}</div>
+      <span>${item}</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('strengthsList').innerHTML = renderList(strengths, 'strength');
+  document.getElementById('weaknessesList').innerHTML = renderList(weaknesses, 'weakness');
+  document.getElementById('concernsList').innerHTML = renderList(concerns, 'concern');
+  document.getElementById('mitigantsList').innerHTML = renderList(mitigants, 'mitigant');
+
+  // Rationale
+  const riskAdj = {'Low Risk':'strong', 'Moderate Risk':'moderate', 'Elevated Risk':'elevated', 'High Risk':'below-standard'};
+  const rationaleMap = {
+    'Approve': `Based on our comprehensive analysis, ${a.d.companyName} presents a ${riskAdj[a.riskCat]} credit profile warranting approval. The company demonstrates a risk score of ${a.totalScore}/100, reflecting adequate financial performance across the evaluated dimensions. DSCR of ${fmtN(a.dscr)}x confirms sufficient cash flow generation to service the proposed debt, while a current ratio of ${fmtN(a.currentRatio)}x indicates sound liquidity management. The ${a.d.yearsInBusiness}-year operating history and established business model further support the credit decision. We recommend approval subject to standard commercial loan documentation and ongoing financial covenant monitoring.`,
+    'Approve with Conditions': `${a.d.companyName} presents a ${riskAdj[a.riskCat]} credit profile with a risk score of ${a.totalScore}/100. While the company demonstrates sufficient cash flow coverage (DSCR: ${fmtN(a.dscr)}x) and adequate liquidity (current ratio: ${fmtN(a.currentRatio)}x), certain financial metrics indicate areas of concern that warrant additional credit enhancement. We recommend conditional approval subject to: execution of personal guarantee(s), compliance with financial covenant package, and potentially a reduced loan amount to improve the overall risk profile. Management should be engaged to discuss the identified concerns prior to final commitment.`,
+    'Further Review Required': `${a.d.companyName} presents an ${riskAdj[a.riskCat]} credit profile with a risk score of ${a.totalScore}/100. The application requires additional information and analysis before a definitive credit decision can be rendered. Key areas warranting further review include: cash flow sustainability supporting a DSCR of ${fmtN(a.dscr)}x, current leverage profile at ${fmtPct(a.debtToAssets)} debt-to-assets, and the adequacy of collateral coverage. We recommend requesting three years of audited or CPA-prepared financial statements, personal financial statements from all guarantors, and a narrative addressing revenue trends. A management presentation may also be warranted.`,
+    'Decline': `Following comprehensive credit analysis, ${a.d.companyName} does not meet minimum underwriting standards for credit approval at this time. The company's risk score of ${a.totalScore}/100 reflects material deficiencies across multiple evaluated dimensions. Principal concerns include a DSCR of ${fmtN(a.dscr)}x, which falls below the minimum 1.15x required threshold, combined with elevated leverage and insufficient liquidity to adequately service the proposed debt obligation. We recommend declining this application in its current form. The applicant may be reconsidered at a future date following demonstrated improvement in cash flow coverage and deleveraging of the balance sheet.`
+  };
+  document.getElementById('rationaleText').textContent = rationaleMap[a.rec] || '—';
+
+  // Industry Risk Chart
+  renderIndustryChart(a);
+}
+
+function renderIndustryChart(a) {
+  destroyChart('industryRisk');
+  const industryRiskLevels = {
+    healthcare:10,accounting:10,insurance:10,utilities:10,
+    manufacturing:7,technology:7,logistics:7,
+    retail:4,restaurant:4,construction:4,startup:4
+  };
+  const score = industryRiskLevels[a.d.industry] || 5;
+  const data = [score, 10 - score];
+  const color = score >= 8 ? '#6aad78' : score >= 6 ? '#e8a84a' : '#d9604a';
+  const label = score >= 8 ? 'Low Risk' : score >= 6 ? 'Moderate Risk' : 'Higher Risk';
+
+  document.getElementById('industryChartLegend').innerHTML = `
+    <span style="display:flex;align-items:center;gap:6px;font-size:13px;color:#8ba4c8">
+      <span style="width:12px;height:12px;border-radius:2px;background:${color};display:inline-block"></span>
+      ${a.d.industry ? a.d.industry.charAt(0).toUpperCase()+a.d.industry.slice(1) : 'Unknown'} — 
+      <strong style="color:${color}">${label}</strong> · ${score}/10 industry score
+    </span>`;
+
+  charts.industryRisk = new Chart(document.getElementById('industryRiskChart'), {
+    type: 'doughnut',
+    data: {
+      labels: [label, 'Risk Deficit'],
+      datasets: [{
+        data,
+        backgroundColor: [color, 'rgba(255,255,255,0.05)'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '70%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ctx.dataIndex === 0 ? ` ${score}/10 (${label})` : '' } }
+      }
+    },
+    plugins: [{
+      id: 'industryCenter',
+      afterDraw(chart) {
+        const {ctx, chartArea} = chart;
+        const cx = (chartArea.left + chartArea.right) / 2;
+        const cy = (chartArea.top + chartArea.bottom) / 2;
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = '600 28px IBM Plex Mono, monospace';
+        ctx.fillStyle = color;
+        ctx.fillText(score + '/10', cx, cy - 4);
+        ctx.font = '400 11px IBM Plex Sans, sans-serif';
+        ctx.fillStyle = '#8ba4c8';
+        ctx.fillText(label, cx, cy + 18);
+        ctx.restore();
+      }
+    }]
+  });
+}
+
+// ─── NOTES ────────────────────────────────────────────────
+document.getElementById('noteInput').addEventListener('input', function() {
+  document.getElementById('noteCharCount').textContent = this.value.length + ' / 1000 characters';
+});
+
+function addNote() {
+  const text = document.getElementById('noteInput').value.trim();
+  if (!text) return;
+  const type = document.getElementById('noteType').value;
+  const note = {
+    id: Date.now(),
+    type,
+    text,
+    company: analysisData ? analysisData.d.companyName : 'No active analysis',
+    time: new Date().toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})
+  };
+  notes.unshift(note);
+  document.getElementById('noteInput').value = '';
+  document.getElementById('noteCharCount').textContent = '0 / 1000 characters';
+  renderNotes();
+}
+
+function deleteNote(id) {
+  notes = notes.filter(n => n.id !== id);
+  renderNotes();
+}
+
+function renderNotes() {
+  const el = document.getElementById('notesList');
+  if (notes.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted);font-size:13px">No notes added yet. Add your first analyst note above.</div>';
+    return;
+  }
+  el.innerHTML = notes.map(n => `
+    <div class="note-item">
+      <div class="note-item-header">
+        <span class="note-item-type note-type-${n.type}">${n.type.toUpperCase()}</span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="note-item-time">${n.company} · ${n.time}</span>
+          <button class="note-delete" onclick="deleteNote(${n.id})" title="Delete note">×</button>
+        </div>
+      </div>
+      <div class="note-item-text">${escapeHtml(n.text)}</div>
+    </div>`).join('');
+}
+
+function insertTemplate(text) {
+  const ta = document.getElementById('noteInput');
+  ta.value = text;
+  document.getElementById('noteCharCount').textContent = text.length + ' / 1000 characters';
+  ta.focus();
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── AUTO-ANALYZE ON INPUT ───────────────────────────────
+let debounceTimer;
+document.querySelectorAll('.field-input').forEach(el => {
+  el.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => { if (analysisData) runAnalysis(); }, 600);
+  });
+  el.addEventListener('change', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => { if (analysisData) runAnalysis(); }, 300);
+  });
+});
+</script>
+</body>
+</html>
